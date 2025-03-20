@@ -49,9 +49,9 @@ class Sentence(list):
     def __init__(self, string="", token=["word"]):
         """ A list of words, where punctuation marks are split from words.
         """
-        s = RE_PUNCTUATION.sub(" \\1 ", string) # Naive tokenization.
+        s = RE_PUNCTUATION.sub(r" \1 ", string) # Naive tokenization.
         s = re.sub(r"\s+", " ", s)
-        s = re.sub(r" ' (d|m|s|ll|re|ve)", " '\\1", s)
+        s = re.sub(r" ' (d|m|s|ll|re|ve)", r" '\1", s)
         s = s.replace("n ' t", " n't")
         s = s.split(" ")
         list.__init__(self, (Word(self, w, index=i) for i, w in enumerate(s)))
@@ -485,7 +485,7 @@ class Constraint(object):
         
     @classmethod
     def fromstring(cls, s, **kwargs):
-        """ Returns a new Constraint from the given string.
+        r""" Returns a new Constraint from the given string.
             Uppercase words indicate either a tag ("NN", "JJ", "VP")
             or a taxonomy term (e.g., "PRODUCT", "PERSON").
             Syntax:
@@ -509,9 +509,9 @@ class Constraint(object):
             # (NN+) == (NN)+ == NN?+ == NN+? == [NN+?] == [NN]+?
             if s.startswith("^"):
                 s = s[1:  ]; C.first = True
-            if s.endswith("+") and not s.endswith("\+"):
+            if s.endswith("+") and not s.endswith(r"\+"):
                 s = s[0:-1]; C.multiple = True
-            if s.endswith("?") and not s.endswith("\?"):
+            if s.endswith("?") and not s.endswith(r"\?"):
                 s = s[0:-1]; C.optional = True
             if s.startswith("(") and s.endswith(")"):
                 s = s[1:-1]; C.optional = True
@@ -519,7 +519,7 @@ class Constraint(object):
                 s = s[1:-1]
         s = re.sub(r"^\\\^", "^", s)
         s = re.sub(r"\\\+$", "+", s)
-        s = s.replace("\_", "&uscore;")
+        s = s.replace(r"\_", "&uscore;")
         s = s.replace("_"," ")
         s = s.replace("&uscore;", "_")
         s = s.replace("&lparen;", "(")
@@ -528,17 +528,17 @@ class Constraint(object):
         s = s.replace("&rbrack;", "]")
         s = s.replace("&lcurly;", "{")
         s = s.replace("&rcurly;", "}")
-        s = s.replace("\(", "(")
-        s = s.replace("\)", ")") 
-        s = s.replace("\[", "[")
-        s = s.replace("\]", "]") 
-        s = s.replace("\{", "{")
-        s = s.replace("\}", "}") 
-        s = s.replace("\*", "*")
-        s = s.replace("\?", "?")    
-        s = s.replace("\+", "+")
-        s = s.replace("\^", "^")
-        s = s.replace("\|", "&vdash;")
+        s = s.replace(r"\(", "(")
+        s = s.replace(r"\)", ")") 
+        s = s.replace(r"\[", "[")
+        s = s.replace(r"\]", "]") 
+        s = s.replace(r"\{", "{")
+        s = s.replace(r"\}", "}") 
+        s = s.replace(r"\*", "*")
+        s = s.replace(r"\?", "?")    
+        s = s.replace(r"\+", "+")
+        s = s.replace(r"\^", "^")
+        s = s.replace(r"\|", "&vdash;")
         s = s.split("|")
         s = [v.replace("&vdash;", "|").strip() for v in s]
         for v in s:
@@ -551,7 +551,7 @@ class Constraint(object):
         if v.startswith("!"):
             self.exclude._append(v[1:]); return
         if "!" in v:
-            v = v.replace("\!", "!")
+            v = v.replace(r"\!", "!")
         if v != v.upper():
             self.words.append(v.lower())
         elif v in TAGS:
@@ -664,7 +664,7 @@ class Constraint(object):
     def string(self):
         a = self.words + self.tags + self.chunks + self.roles + [w.upper() for w in self.taxa]
         a = (escape(s) for s in a)
-        a = (s.replace("\\*", "*") for s in a)
+        a = (s.replace(r"\*", "*") for s in a)
         a = [s.replace(" ", "_") for s in a]
         if self.exclude:
             a.extend("!"+s for s in self.exclude.string[1:-1].split("|"))
@@ -720,12 +720,12 @@ class Pattern(object):
             Constraints are separated by a space.
             If a constraint contains a space, it must be wrapped in [].
         """
-        s = s.replace("\(", "&lparen;")
-        s = s.replace("\)", "&rparen;")
-        s = s.replace("\[", "&lbrack;")
-        s = s.replace("\]", "&rbrack;")
-        s = s.replace("\{", "&lcurly;")
-        s = s.replace("\}", "&rcurly;")
+        s = s.replace(r"\(", "&lparen;")
+        s = s.replace(r"\)", "&rparen;")
+        s = s.replace(r"\[", "&lbrack;")
+        s = s.replace(r"\]", "&rbrack;")
+        s = s.replace(r"\{", "&lcurly;")
+        s = s.replace(r"\}", "&rcurly;")
         p = []
         i = 0
         for m in re.finditer(r"\[.*?\]|\(.*?\)", s):
@@ -737,7 +737,7 @@ class Pattern(object):
         s = "".join(p) 
         s = s.replace("][", "] [")
         s = s.replace(")(", ") (")
-        s = s.replace("\|", "&vdash;")
+        s = s.replace(r"\|", "&vdash;")
         s = re.sub(r"\s+\|\s+", "|", s)  
         s = re.sub(r"\s+", " ", s)
         s = re.sub(r"\{\s+", "{", s)
@@ -962,7 +962,7 @@ def search(pattern, sentence, *args, **kwargs):
     return compile(pattern, *args, **kwargs).search(sentence)
 
 def escape(string):
-    """ Returns the string with control characters for Pattern syntax escaped.
+    r""" Returns the string with control characters for Pattern syntax escaped.
         For example: "hello!" => "hello\!".
     """
     for ch in ("{","}","[","]","(",")","_","|","!","*","+","^"):
